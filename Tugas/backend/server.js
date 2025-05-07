@@ -3,34 +3,28 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-let userIdCounter = 1; // Letakkan di bagian atas file
-
-// Di bagian createUser, tambahkan prefix unik
-const createUser = (prefix) => {
-  const id = prefix * 100 + userIdCounter++;
-  return {
-    id,
-    name: `User-${id}`,
-    age: Math.floor(Math.random() * 50) + 18,
-    email: `user${id}@example.com`
-  };
-};
-
-// Paginated API (10 user/halaman)
-app.get('/api/users', async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const users = Array.from({ length: 10 }, (_, i) => createUser(page)); // Prefix dengan nomor halaman
-  res.json(users);
+// Data generator with unique IDs
+let userIdCounter = 1;
+const createUser = () => ({
+  id: userIdCounter++,
+  name: `User ${userIdCounter}`,
+  age: Math.floor(Math.random() * 50) + 18,
+  email: `user${userIdCounter}@example.com`
 });
 
-// Streaming API (15 user total)
-app.get('/api/users-stream', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  Array.from({ length: 15 }, (_, i) => {
-    const user = createUser(0); // Prefix 0 untuk streaming
-    res.write(JSON.stringify(user) + '\n');
-  });
-  res.end();
+// Paginated API
+app.get('/api/users', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+    
+    const users = Array.from({ length: limit }, () => createUser());
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Streaming API
@@ -62,7 +56,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-const PORT = 3000;
+const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
